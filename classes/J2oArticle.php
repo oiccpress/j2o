@@ -4,7 +4,8 @@ class J2oArticle extends J2oObject {
 
     public string $doi, $title, $articleType, $volume, $issue;
     public array $keywords = [], $authors = [];
-    public $abstract;
+    public J2oText $abstract;
+    public DateTime $published, $acceptedDate, $receivedDate;
 
     public function __construct($node ){
         $this->loadFrom($node);
@@ -37,11 +38,45 @@ class J2oArticle extends J2oObject {
         }
     }
 
+    public function loadDate($parent) {
+        $year = $month = $day = 0;
+        foreach($parent->childNodes as $node) {
+            switch($node->nodeName) {
+                case 'year':
+                    $year = $node->nodeValue;
+                    break;
+                case 'month':
+                    $month = $node->nodeValue;
+                    break;
+                case 'day':
+                    $day = $node->nodeValue;
+                    break;
+                default:
+                    $this->logWarning('>> Unknown date element: ' . $node->nodeName);
+            }
+        }
+        $val = new DateTime();
+        $val->setDate($year, $month, $day);
+        return $val;
+    }
+
     public function loadArticleMeta($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case 'author-notes':
+                case 'notes':
                 case 'elocation-id':
+                case 'permissions':
                     printdebug('> skipping ' . $node->nodeName);
+                    break;
+                case 'pub-date':
+                    switch($node->getAttribute("publication-format")) {
+                        case 'electronic':
+                            $this->published = $this->loadDate($node);
+                            break;
+                        default:
+                            printdebug('>> Ignoring date for ' . $node->getAttribute("publication-format") . ' publication');
+                    }
                     break;
                 case 'abstract':
                     $this->abstract = $this->subobject(new J2oText($node));
@@ -85,6 +120,9 @@ class J2oArticle extends J2oObject {
                             break;
                     }
                     break;
+                case 'history':
+                    $this->loadHistory($node);
+                    break;
                 case 'contrib-group':
                     $this->loadContribGroup($node);
                     break;
@@ -93,6 +131,32 @@ class J2oArticle extends J2oObject {
                     break;
                 default:
                     $this->logWarning('>> Unknown article-meta element: ' . $node->nodeName);
+            }
+        }
+    }
+
+    public function loadHistory($parent) {
+        foreach($parent->childNodes as $node) {
+            switch($node->nodeName) {
+                case 'date':
+                    $type = $node->getAttribute('date-type');
+                    switch($type) {
+                        case 'online':
+                        case 'registration':
+                            printdebug('>> ignoring ' . $type . ' date');
+                            break;
+                        case 'accepted':
+                            $this->acceptedDate = $this->loadDate($node);
+                            break;
+                        case 'received':
+                            $this->receivedDate = $this->loadDate($node);
+                            break;
+                        default:
+                            $this->logWarning('>> Unknown date type: ' . $type);
+                    }
+                    break;
+                default:
+                    $this->logWarning('>> Unknown history element: ' . $node->nodeName);
             }
         }
     }

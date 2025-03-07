@@ -3,6 +3,7 @@
 class J2oAuthor extends J2oObject {
 
     public string $surname, $givenNames, $email;
+    public bool $corresponding = false;
 
     public array $aff_id = [], $affiliations = [];
 
@@ -22,6 +23,9 @@ class J2oAuthor extends J2oObject {
                 case 'xref':
                     $ref_type = $node->getAttribute("ref-type");
                     switch($ref_type) {
+                        case 'corresp':
+                            $this->corresponding = true;
+                            break;
                         case 'aff':
                             $this->aff_id[] = $node->getAttribute('rid');
                             break;

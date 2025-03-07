@@ -4,6 +4,11 @@ class J2oText extends J2oObject {
 
     public string $html;
 
+    public const SWAPPED_NODE_TYPES = [
+        'sec' => 'section',
+        'italic' => 'em',
+    ];
+
     public function __construct($node)
     {
         $this->html = $this->loadFrom($node);
@@ -12,22 +17,28 @@ class J2oText extends J2oObject {
     public function loadFrom($parent) {
         $html = [];
         foreach($parent->childNodes as $node) {
-            switch($node->nodeName) {
-                case '#text':
-                    $html[] = $node->nodeValue;
-                    break;
-                case 'title':
-                    $html[] = '<h2>' . $node->nodeValue . '</h2>';
-                    break;
-                case 'sec':
-                    $html[] = '<section>' . $this->loadFrom($node) . '</section>';
-                    break;
-                case 'p':
-                case 'sup':
-                    $html[] = '<' . $node->nodeName . '>' . $this->loadFrom($node) . '</' . $node->nodeName . '>';
-                    break;
-                default:
-                    $this->logWarning('>> Unknown text element: ' . $node->nodeName);
+            if(array_key_exists($node->nodeName, static::SWAPPED_NODE_TYPES)) {
+                $n = static::SWAPPED_NODE_TYPES[ $node->nodeName ];
+                $html[] = '<' . $n . '>' . $this->loadFrom($node) . '</' .$n . '>';
+            } else {
+                switch($node->nodeName) {
+                    case 'ext-link':
+                        $html[] = '<a href="' . $node->getAttribute('xlink:href') . '">' . $this->loadFrom($node) . '</a>';
+                        break;
+                    case '#text':
+                        $html[] = $node->nodeValue;
+                        break;
+                    case 'title':
+                        $html[] = '<h2>' . $node->nodeValue . '</h2>';
+                        break;
+                    case 'p':
+                    case 'sub':
+                    case 'sup':
+                        $html[] = '<' . $node->nodeName . '>' . $this->loadFrom($node) . '</' . $node->nodeName . '>';
+                        break;
+                    default:
+                        $this->logWarning('>> Unknown text element: ' . $node->nodeName);
+                }
             }
         }
         return implode("\n", $html);
