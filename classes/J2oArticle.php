@@ -4,11 +4,11 @@ class J2oArticle extends J2oObject {
 
     public string $doi, $title, $articleType, $volume, $issue, $pdf;
     public bool $openAccess = false;
-    public array $keywords = [], $authors = [], $subjects = [];
-    public J2oText $abstract;
+    public array $keywords = [], $authors = [], $subjects = [], $references = [];
+    public J2oText $abstract, $acknowledgement;
     public DateTime $published, $acceptedDate, $receivedDate;
 
-    public function __construct($node ){
+    public function __construct( public $filepath, $node ){
         $this->loadFrom($node);
     }
 
@@ -37,11 +37,34 @@ class J2oArticle extends J2oObject {
             switch($node->nodeName) {
                 case '#text':
                     break;
+                case 'ref-list':
+                    $this->loadRefList($node);
+                    break;
+                case 'ack':
+                    $this->acknowledgement = $this->subobject(new J2oText($node));
+                    break;
+                case 'glossary':
+                case 'app-group':
                 case 'notes':
-                    printdebug('>> skipping notes');
+                    printdebug('>> skipping ' . $node->nodeName);
                     break;
                 default:
                     $this->logWarning('>> Unknown back element: ' . $node->nodeName);
+            }
+        }
+    }
+
+    public function loadRefList($parent) {
+        foreach($parent->childNodes as $node) {
+            switch($node->nodeName) {
+                case 'title':
+                case '#text':
+                    break;
+                case 'ref':
+                    $this->references[] = $this->subobject(new J2oReference($node));
+                    break;
+                default:
+                    $this->logWarning('>> Unknown ref-list element: ' . $node->nodeName);
             }
         }
     }

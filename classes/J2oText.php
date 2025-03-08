@@ -7,6 +7,7 @@ class J2oText extends J2oObject {
     public const SWAPPED_NODE_TYPES = [
         'sec' => 'section',
         'italic' => 'em',
+        'bold' => 'strong',
     ];
 
     public function __construct($node)

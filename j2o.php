@@ -19,6 +19,7 @@ require_once(dirname(__FILE__) . '/classes/J2oArticle.php');
 require_once(dirname(__FILE__) . '/classes/J2oAffiliation.php');
 require_once(dirname(__FILE__) . '/classes/J2oAuthor.php');
 require_once(dirname(__FILE__) . '/classes/J2oText.php');
+require_once(dirname(__FILE__) . '/classes/J2oReference.php');
 
 $arguments = $argv;
 if(count($arguments) === 3) {
@@ -61,12 +62,12 @@ if(count($arguments) === 2) {
                         case '#text':
                             break;
                         case 'article':
-                            $articleEntries[] = $article = new J2oArticle($node);
+                            $articleEntries[] = $article = new J2oArticle($filepath, $node);
                             // var_dump($article);
                             if($article->hasWarnings()) {
                                 println('> Warnings total: ' . count($article->warnings));
-                                $articleWarnings[] = count($article->warnings);
                             }
+                            $articleWarnings[] = count($article->warnings);
                             break;
                         default:
                             println('>> Unknown root element: ' . $node->nodeName);
@@ -85,7 +86,7 @@ if(count($arguments) === 2) {
     $html[] = '<table>';
     foreach($articleEntries as $article) {
         $html[] = '<tr><td>';
-        $html[] = '<details><summary>' . $article->title . '</summary>';
+        $html[] = '<details><summary>' . $article->title . '<br/>' . $article->filepath . '</summary>';
         $html[] = '<ul><li>' . implode('</li><li>', $article->warnings) . '</li></ul></details>';
         $html[] = '</td><td>' . count($article->warnings) . ' warnings</td></tr>';
     }
