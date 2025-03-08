@@ -58,6 +58,8 @@ if(count($arguments) === 2) {
                 foreach($document->childNodes as $node) {
                     if($node->nodeType != XML_ELEMENT_NODE) continue;
                     switch($node->nodeName) {
+                        case '#text':
+                            break;
                         case 'article':
                             $articleEntries[] = $article = new J2oArticle($node);
                             // var_dump($article);
@@ -71,9 +73,24 @@ if(count($arguments) === 2) {
                     }
                 }
 
+                println('----');
+
             }
         }
     }
+
+    $html = ['<h1>J2o report</h1>'];
+    $html[] = 'Max warnings: ' . max($articleWarnings) . '<br/>';
+    $html[] = 'Avg warnings: ' . ( array_sum($articleWarnings) / count($articleWarnings) );
+    $html[] = '<table>';
+    foreach($articleEntries as $article) {
+        $html[] = '<tr><td>';
+        $html[] = '<details><summary>' . $article->title . '</summary>';
+        $html[] = '<ul><li>' . implode('</li><li>', $article->warnings) . '</li></ul></details>';
+        $html[] = '</td><td>' . count($article->warnings) . ' warnings</td></tr>';
+    }
+    $html[] = '</table>';
+    file_put_contents('report.html', implode("", $html));
 
     println('-----');
     println('Max warnings: ' . max($articleWarnings));

@@ -2,8 +2,9 @@
 
 class J2oArticle extends J2oObject {
 
-    public string $doi, $title, $articleType, $volume, $issue;
-    public array $keywords = [], $authors = [];
+    public string $doi, $title, $articleType, $volume, $issue, $pdf;
+    public bool $openAccess = false;
+    public array $keywords = [], $authors = [], $subjects = [];
     public J2oText $abstract;
     public DateTime $published, $acceptedDate, $receivedDate;
 
@@ -14,6 +15,8 @@ class J2oArticle extends J2oObject {
     public function loadFrom($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'front':
                     $this->loadFrontNode($node);
                     break;
@@ -26,6 +29,11 @@ class J2oArticle extends J2oObject {
     public function loadFrontNode($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
+                case 'notes':
+                    printdebug('>> skipping notes');
+                    break;
                 case 'journal-meta':
                     printdebug('>> Skipping journal-meta: Journals should already be defined');
                     break;
@@ -42,6 +50,8 @@ class J2oArticle extends J2oObject {
         $year = $month = $day = 0;
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'year':
                     $year = $node->nodeValue;
                     break;
@@ -63,11 +73,16 @@ class J2oArticle extends J2oObject {
     public function loadArticleMeta($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'author-notes':
                 case 'notes':
                 case 'elocation-id':
                 case 'permissions':
                     printdebug('> skipping ' . $node->nodeName);
+                    break;
+                case 'custom-meta-group':
+                    $this->loadCustomMeta($node);
                     break;
                 case 'pub-date':
                     switch($node->getAttribute("publication-format")) {
@@ -90,6 +105,8 @@ class J2oArticle extends J2oObject {
                 case 'article-categories':
                     foreach($node->childNodes as $child) {
                         switch($child->nodeName) {
+                            case '#text':
+                                break;
                             case 'subj-group':
                                 $this->loadSubjectGroup($child);
                                 break;
@@ -101,6 +118,8 @@ class J2oArticle extends J2oObject {
                 case 'title-group':
                     foreach($node->childNodes as $child) {
                         switch($child->nodeName) {
+                            case '#text':
+                                break;
                             case 'article-title':
                                 $this->title = $child->nodeValue;
                                 break;
@@ -135,12 +154,60 @@ class J2oArticle extends J2oObject {
         }
     }
 
+    public function loadCustomMeta($parent) {
+        foreach($parent->childNodes as $node) {
+            switch($node->nodeName) {
+                case '#text':
+                    break;
+                case 'custom-meta':
+                    $name = $node->getElementsByTagName('meta-name')[0]->nodeValue;
+                    $value = $node->getElementsByTagName('meta-value')[0]->nodeValue;
+                    if(in_array($name, [
+                            'publisher-imprint-name', 'volume-issue-count', 'issue-article-count',
+                            'issue-toc-levels', 'issue-copyright-holder', 'issue-toc-levels',
+                            'issue-copyright-holder', 'issue-copyright-year', 'article-contains-esm',
+                            'article-numbering-style', 'article-registration-date-year', 'article-registration-date-month',
+                            'article-registration-date-day', 'toc-levels', 'volume-type', 'journal-type', 'numbering-style',
+                            'article-grants-type', 'metadata-grant', 'abstract-grant', 'journal-product',
+                            'article-type', 'journal-subject-collection', 'issue-type', 'pdf-type',
+                            'target-type', 'article-toc-levels', 'bodypdf-grant', 'bodyhtml-grant',
+                            'bibliography-grant', 'online-first', 'esm-grant',
+                        ])) {
+                        continue; // Ignore
+                    }
+                    switch($name) {
+                        case 'open-access':
+                            if($value == 'true') {
+                                $this->openAccess = true;
+                            }
+                            break;
+                        case 'pdf-file-reference':
+                            $this->pdf = $value;
+                            break;
+                        case 'journal-subject-primary':
+                        case 'journal-subject-secondary':
+                            $this->subjects[] = $value;
+                            break;
+                        default:
+                            $this->logWarning('>>> unknown meta key ' . $name . ' => ' . $value);
+                    }
+                    break;
+                default:
+                    $this->logWarning('>> Unknown custom-meta element: ' . $node->nodeName);
+            }
+        }
+    }
+
     public function loadHistory($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'date':
                     $type = $node->getAttribute('date-type');
                     switch($type) {
+                        case '#text':
+                            break;
                         case 'online':
                         case 'registration':
                             printdebug('>> ignoring ' . $type . ' date');
@@ -165,6 +232,8 @@ class J2oArticle extends J2oObject {
         $type = '';
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'title':
                     if($node->nodeValue == 'Keywords') {
                         $type = 'kw';
@@ -186,6 +255,8 @@ class J2oArticle extends J2oObject {
     public function loadContribGroup($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'aff':
                     $found = false;
                     $aff_id = $node->getAttribute("id");
@@ -215,6 +286,8 @@ class J2oArticle extends J2oObject {
     public function loadSubjectGroup($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'subject':
                     if($parent->getAttribute("subj-group-type") == "heading") {
                         $this->articleType = $node->nodeValue;

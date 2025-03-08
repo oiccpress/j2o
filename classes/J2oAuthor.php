@@ -14,6 +14,8 @@ class J2oAuthor extends J2oObject {
     public function loadFrom($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'name':
                     $this->loadName($node);
                     break;
@@ -42,6 +44,8 @@ class J2oAuthor extends J2oObject {
     public function loadAddress($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'email':
                     $this->email = $node->nodeValue;
                     break;
@@ -54,6 +58,8 @@ class J2oAuthor extends J2oObject {
     public function loadName($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'surname':
                     $this->surname = $node->nodeValue;
                     break;
@@ -61,7 +67,7 @@ class J2oAuthor extends J2oObject {
                     $this->givenNames = $node->nodeValue;
                     break;
                 default:
-                    $this->logWarning('>> Unknown author name element: ' . $node->nodeName);
+                    $this->logWarning('>>> Unknown author name element: ' . $node->nodeName);
             }
         }
     }

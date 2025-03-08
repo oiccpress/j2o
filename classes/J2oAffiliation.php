@@ -15,12 +15,18 @@ class J2oAffiliation extends J2oObject {
     public function loadAff($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
+                case '#text':
+                    break;
                 case 'country':
                     $this->affiliationOrganisationCountry = $node->getAttribute("country");
                     break;
                 case 'addr-line':
                     $part = $node->getAttribute('content-type');
                     switch($part) {
+                        case 'street':
+                        case 'postbox':
+                            printdebug('>>> ignore addr-line ' . $node->nodeName );
+                            break;
                         case 'state':
                             $this->affiliationOrganisationState = $node->nodeValue;
                             break;
@@ -40,6 +46,8 @@ class J2oAffiliation extends J2oObject {
                 case 'institution-wrap':
                     foreach($node->childNodes as $child) {
                         switch($child->nodeName) {
+                            case '#text':
+                                break;
                             case 'label':
                             case 'institution-id':
                                 printdebug('>>> Ignoring ' . $child->nodeName);
