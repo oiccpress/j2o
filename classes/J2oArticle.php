@@ -20,8 +20,28 @@ class J2oArticle extends J2oObject {
                 case 'front':
                     $this->loadFrontNode($node);
                     break;
+                case 'body':
+                    printdebug('>> Ignoring body');
+                    break;
+                case 'back':
+                    $this->loadBackNode($node);
+                    break;
                 default:
                     $this->logWarning('>> Unknown article element: ' . $node->nodeName);
+            }
+        }
+    }
+
+    public function loadBackNode($parent) {
+        foreach($parent->childNodes as $node) {
+            switch($node->nodeName) {
+                case '#text':
+                    break;
+                case 'notes':
+                    printdebug('>> skipping notes');
+                    break;
+                default:
+                    $this->logWarning('>> Unknown back element: ' . $node->nodeName);
             }
         }
     }
