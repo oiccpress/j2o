@@ -2,7 +2,7 @@
 
 class J2oIssue {
 
-    public string $volume, $issue;
+    public string $volume, $issue, $journalId;
     public DateTime $published;
 
     /**
@@ -13,6 +13,7 @@ class J2oIssue {
     public function __construct(J2oArticle $firstArticle) {
         $this->volume = $firstArticle->volume;
         $this->issue = $firstArticle->issue;
+        $this->journalId = $firstArticle->journalId;
         $this->published = $firstArticle->published;
     }
 
@@ -21,7 +22,7 @@ class J2oIssue {
     }
 
     public function getIssueKey() {
-        return 'vol-' . $this->volume . '-issue-' . $this->issue;
+        return 'journal-' . $this->journalId . '-vol-' . $this->volume . '-issue-' . $this->issue;
     }
 
     public function outputIssue($out_dir) {

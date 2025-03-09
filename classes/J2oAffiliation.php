@@ -22,7 +22,7 @@ class J2oAffiliation extends J2oObject {
             $this->affiliationOrganisationCountry,
         ];
         $parts = array_filter($parts);
-        return implode(', ', $parts);
+        return htmlentities( implode(', ', $parts), ENT_XML1 );
     }
 
     public function loadAff($parent) {

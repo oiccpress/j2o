@@ -24,10 +24,10 @@ class J2oText extends J2oObject {
             } else {
                 switch($node->nodeName) {
                     case 'ext-link':
-                        $html[] = '<a href="' . $node->getAttribute('xlink:href') . '">' . $this->loadFrom($node) . '</a>';
+                        $html[] = '<a href="' . htmlspecialchars($node->getAttribute('xlink:href'), ENT_XML1) . '">' . $this->loadFrom($node) . '</a>';
                         break;
                     case '#text':
-                        $html[] = $node->nodeValue;
+                        $html[] = htmlspecialchars($node->nodeValue, ENT_XML1);
                         break;
                     case 'title':
                         $html[] = '<h2>' . $node->nodeValue . '</h2>';

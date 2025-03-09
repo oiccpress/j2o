@@ -2,7 +2,7 @@
 
 class J2oArticle extends J2oObject {
 
-    public string $doi, $title, $articleType, $volume, $issue, $pdf;
+    public string $doi, $title, $articleType, $volume, $issue, $pdf, $journalId;
     public bool $openAccess = false;
     public array $keywords = [], $authors = [], $subjects = [], $references = [];
     public J2oText $abstract, $acknowledgement;
@@ -18,7 +18,7 @@ class J2oArticle extends J2oObject {
     }
 
     public function getIssueKey() {
-        return 'vol-' . $this->volume . '-issue-' . $this->issue;
+        return 'journal-' . $this->journalId . '-vol-' . $this->volume . '-issue-' . $this->issue;
     }
 
     public function outputArticle($output_file, $id) {
@@ -30,7 +30,7 @@ class J2oArticle extends J2oObject {
 
         // Files to add
         // Add PDF
-        if($this->pdf) {
+        if($this->pdf && $this->openAccess) {
             $file_id = $id;
             $stage = 'submission';
             $dataset = '';
@@ -39,7 +39,7 @@ class J2oArticle extends J2oObject {
             fputs($output_file, '<name filepath="' . $id . '.pdf" locale="en">article.pdf</name>' . PHP_EOL);
             $ext = 'pdf';
             fputs($output_file, '<file id="' . $file_id . '" filesize="' . filesize($this->pdf) . '" extension="' . $ext . '">');
-            fputs($output_file, '<embed encoding="base64">' . base64_encode(file_get_contents($this->pdf)) . '</embed>' . PHP_EOL);
+            // fputs($output_file, '<embed encoding="base64">' . base64_encode(file_get_contents($this->pdf)) . '</embed>' . PHP_EOL);
 
             fputs($output_file, '</file></submission_file>' . PHP_EOL);
         }
@@ -160,13 +160,37 @@ class J2oArticle extends J2oObject {
                     printdebug('>> skipping notes');
                     break;
                 case 'journal-meta':
-                    printdebug('>> Skipping journal-meta: Journals should already be defined');
+                    $this->loadJournalMeta($node);
                     break;
                 case 'article-meta':
                     $this->loadArticleMeta($node);
                     break;
                 default:
                     $this->logWarning('>> Unknown front element: ' . $node->nodeName);
+            }
+        }
+    }
+
+    public function loadJournalMeta($parent) {
+        foreach($parent->childNodes as $node) {
+            switch($node->nodeName) {
+                case 'journal-title-group':
+                case 'issn':
+                case 'publisher':
+                case '#text':
+                    break;
+                case 'journal-id':
+                    $type = $node->getAttribute('journal-id-type');
+                    switch($type) {
+                        case 'publisher-id':
+                            $this->journalId = $node->nodeValue;
+                            break;
+                        default:
+                            printdebug('>> ignoring journal-id type ' . $type);
+                    }
+                    break;
+                default:
+                    $this->logWarning('>> Unknown journal-meta element: ' . $node->nodeName);
             }
         }
     }
