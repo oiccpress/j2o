@@ -16,6 +16,39 @@ class J2oArticle extends J2oObject {
         return 'vol-' . $this->volume . '-issue-' . $this->issue;
     }
 
+    public function outputArticle($output_file) {
+        fputs($output_file, '<article xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" ');
+        fputs($output_file, 'data_accepted="' . $this->acceptedDate->format('Y-m-d') . '" ');
+        fputs($output_file, 'current_publication_id="' . $this->doi . '"  status="3" submission_progress="" stage="production">' . PHP_EOL);
+
+        fputs($output_file, '<id type="doi" advice="update">' . $this->doi . '</id>' . PHP_EOL);
+
+        $primary_contact = '';
+		if($this->primary_contact_id) {
+			$primary_contact = 'primary_contact_id="' . $this->primary_contact_id . '" ';
+		}
+
+        fputs($output_file, '<publication xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1" status="3" url_path="" seq="0" access_status="0" ' . $primary_contact . ' date_published="' . $this->published->format('Y-m-d') . '" section_ref="'. J2oIssue::slugify($this->articleType) . '" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">' . PHP_EOL);
+
+        fputs($output_file, '<title locale="en">' . $this->title . '</title>' . PHP_EOL);
+        fputs($output_file, '<abstract locale="en">' . $this->abstract->html . '</abstract>' . PHP_EOL);
+
+        if(!empty($this->keywords)) {
+            fputs($output_file, '<keywords locale="en">' . PHP_EOL);
+            foreach($this->keywords as $keyword) {
+                fputs($output_file, '<keyword>' . $keyword . '</keyword>' . PHP_EOL);
+            }
+            fputs($output_file, '</keywords>' . PHP_EOL);
+        }
+        if(!empty($this->authors)) {
+            // TODO: output authors here
+        }
+
+        fputs($output_file, '</publication>' . PHP_EOL);
+
+        fputs($output_file, '</article>' . PHP_EOL);
+    }
+
     public function loadFrom($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {

@@ -92,6 +92,14 @@ class J2oIssue {
         }
         fputs($output_file, '</sections>' . PHP_EOL);
 
+        fputs($output_file, '<issue_galleys xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pkp.sfu.ca native.xsd"/>');
+
+        fputs($output_file, '<articles xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">');
+        foreach($this->articles as $article) {
+            $article->outputArticle($output_file);
+        }
+        fputs($output_file, '</articles>');
+
         return $output_file;
     }
 
