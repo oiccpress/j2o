@@ -12,6 +12,10 @@ class J2oArticle extends J2oObject {
         $this->loadFrom($node);
     }
 
+    public function getIssueKey() {
+        return 'vol-' . $this->volume . '-issue-' . $this->issue;
+    }
+
     public function loadFrom($parent) {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {

@@ -19,6 +19,7 @@ require_once(dirname(__FILE__) . '/classes/J2oArticle.php');
 require_once(dirname(__FILE__) . '/classes/J2oAffiliation.php');
 require_once(dirname(__FILE__) . '/classes/J2oAuthor.php');
 require_once(dirname(__FILE__) . '/classes/J2oText.php');
+require_once(dirname(__FILE__) . '/classes/J2oIssue.php');
 require_once(dirname(__FILE__) . '/classes/J2oReference.php');
 
 $arguments = $argv;
@@ -46,6 +47,7 @@ if(count($arguments) === 2) {
     $recursiveIterator = new \RecursiveIteratorIterator($directoryIterator, \RecursiveIteratorIterator::SELF_FIRST);
     $articleEntries = [];
     $articleWarnings = [];
+    $issueOutputs = [];
 
     foreach ($recursiveIterator as $file) {
         if ($file->isFile()) {
@@ -68,6 +70,10 @@ if(count($arguments) === 2) {
                                 println('> Warnings total: ' . count($article->warnings));
                             }
                             $articleWarnings[] = count($article->warnings);
+                            if(!array_key_exists($article->getIssueKey(), $issueOutputs)) {
+                                $issueOutputs[ $article->getIssueKey() ] = new J2oIssue($article);
+                            }
+                            $issueOutputs[ $article->getIssueKey() ]->addArticle($article);
                             break;
                         default:
                             println('>> Unknown root element: ' . $node->nodeName);
@@ -78,6 +84,10 @@ if(count($arguments) === 2) {
 
             }
         }
+    }
+
+    foreach($issueOutputs as $output) {
+        $output->outputIssue($out_dir);
     }
 
     $html = ['<h1>J2o report</h1>'];
