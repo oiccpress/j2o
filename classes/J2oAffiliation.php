@@ -2,14 +2,27 @@
 
 class J2oAffiliation extends J2oObject {
 
-    public string $affiliationOrganisationName,
-        $affiliationOrganisationDivision, $affiliationOrganisationPostcode,
-        $affiliationOrganisationCity, $affiliationOrganisationState,
-        $affiliationOrganisationCountry;
+    public ?string $affiliationOrganisationName = null,
+        $affiliationOrganisationDivision = null, $affiliationOrganisationPostcode = null,
+        $affiliationOrganisationCity = null, $affiliationOrganisationState = null,
+        $affiliationOrganisationCountry = null;
 
     public function __construct($node)
     {
         $this->loadAff($node);
+    }
+
+    public function string() {
+        $parts = [
+            $this->affiliationOrganisationDivision,
+            $this->affiliationOrganisationName,
+            $this->affiliationOrganisationCity,
+            $this->affiliationOrganisationState,
+            $this->affiliationOrganisationPostcode,
+            $this->affiliationOrganisationCountry,
+        ];
+        $parts = array_filter($parts);
+        return implode(', ', $parts);
     }
 
     public function loadAff($parent) {

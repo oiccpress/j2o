@@ -2,7 +2,7 @@
 
 class J2oAuthor extends J2oObject {
 
-    public string $surname, $givenNames, $email;
+    public ?string $surname, $givenNames = null, $email = null;
     public bool $corresponding = false;
 
     public array $aff_id = [], $affiliations = [];
@@ -25,6 +25,8 @@ class J2oAuthor extends J2oObject {
                 case 'xref':
                     $ref_type = $node->getAttribute("ref-type");
                     switch($ref_type) {
+                        case 'fn':
+                            break;
                         case 'corresp':
                             $this->corresponding = true;
                             break;
@@ -32,7 +34,7 @@ class J2oAuthor extends J2oObject {
                             $this->aff_id[] = $node->getAttribute('rid');
                             break;
                         default:
-                            printdebug('>>> unknown author ref type ' . $ref_type);
+                            $this->logWarning('>>> unknown author ref type ' . $ref_type);
                     }
                     break;
                 default:
@@ -72,5 +74,30 @@ class J2oAuthor extends J2oObject {
         }
     }
 
+    public function ojs($k, $id) {
+
+        $output = [ '<author corresponding="' . ($this->corresponding ? 'true' : 'false') .
+             '" include_in_browse="true" user_group_ref="Author" seq="' . $k . '" id="' . $id . '">', ];
+
+        $output[] = '<givenname locale="en">' . $this->givenNames . '</givenname>';
+        $output[] = '<familyname locale="en">' . $this->surname . '</familyname>';
+
+        $aff_text = [];
+        foreach($this->affiliations as $aff) {
+            $aff_text[] = $aff->string();
+        }
+        if(!empty($aff_text)) {
+            $output[] = '<affiliation locale="en">' . implode("\n", $aff_text) . '</affiliation>';
+        }
+
+        if($this->email) {
+            $output[] = '<email>' . $this->email . '</email>';
+        }
+
+        $output[] = '</author>';
+
+        return "\t" . implode("\n\t", $output);
+
+    }
 
 }

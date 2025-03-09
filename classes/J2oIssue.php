@@ -69,6 +69,8 @@ class J2oIssue {
     }
 
     public function outputIssueHeader($output_file) {
+        // We output directly to a file to not run into memory issues when including galley files later on
+        // so that's why everything is fputs for now
         fputs($output_file, '<?xml version="1.0"?>' . PHP_EOL);
         fputs($output_file, '<issues xmlns="http://pkp.sfu.ca" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' . PHP_EOL);
 
@@ -95,8 +97,10 @@ class J2oIssue {
         fputs($output_file, '<issue_galleys xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pkp.sfu.ca native.xsd"/>');
 
         fputs($output_file, '<articles xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">');
+        $i = 0;
         foreach($this->articles as $article) {
-            $article->outputArticle($output_file);
+            $article->outputArticle($output_file, $i);
+            $i += 1;
         }
         fputs($output_file, '</articles>');
 
