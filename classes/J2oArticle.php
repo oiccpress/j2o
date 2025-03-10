@@ -31,15 +31,15 @@ class J2oArticle extends J2oObject {
         // Files to add
         // Add PDF
         if($this->pdf && $this->openAccess) {
-            $file_id = $id;
+            $file_id = $id+1;
             $stage = 'submission';
-            $dataset = '';
+            $dataset = 'Article Text';
             fputs($output_file, '<submission_file xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="' . $file_id . '" file_id="' . $file_id . '" stage="' . $stage . '" viewable="false" genre="' . $dataset . '" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">' . PHP_EOL);
 
             fputs($output_file, '<name filepath="' . $id . '.pdf" locale="en">article.pdf</name>' . PHP_EOL);
             $ext = 'pdf';
             fputs($output_file, '<file id="' . $file_id . '" filesize="' . filesize($this->pdf) . '" extension="' . $ext . '">');
-            // fputs($output_file, '<embed encoding="base64">' . base64_encode(file_get_contents($this->pdf)) . '</embed>' . PHP_EOL);
+            fputs($output_file, '<embed encoding="base64">' . base64_encode(file_get_contents($this->pdf)) . '</embed>' . PHP_EOL);
 
             fputs($output_file, '</file></submission_file>' . PHP_EOL);
         }
@@ -53,13 +53,13 @@ class J2oArticle extends J2oObject {
 
         fputs($output_file, '<publication xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1" status="3" url_path="" seq="0" access_status="0" ' . $primary_contact . ' date_published="' . $this->published->format('Y-m-d') . '" section_ref="'. J2oIssue::slugify($this->articleType) . '" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">' . PHP_EOL);
 
-        fputs($output_file, '<title locale="en">' . $this->title . '</title>' . PHP_EOL);
+        fputs($output_file, '<title locale="en">' . htmlspecialchars($this->title, ENT_XML1) . '</title>' . PHP_EOL);
         fputs($output_file, '<abstract locale="en">' . $this->abstract->html . '</abstract>' . PHP_EOL);
 
         if(!empty($this->keywords)) {
             fputs($output_file, '<keywords locale="en">' . PHP_EOL);
             foreach($this->keywords as $keyword) {
-                fputs($output_file, '<keyword>' . $keyword . '</keyword>' . PHP_EOL);
+                fputs($output_file, '<keyword>' . htmlspecialchars($keyword, ENT_XML1) . '</keyword>' . PHP_EOL);
             }
             fputs($output_file, '</keywords>' . PHP_EOL);
         }
@@ -73,17 +73,17 @@ class J2oArticle extends J2oObject {
         if(!empty($this->subjects)) {
             fputs($output_file, '<subjects locale="en">' . PHP_EOL);
             foreach($this->subjects as $keyword) {
-                fputs($output_file, '<subject>' . $keyword . '</subject>' . PHP_EOL);
+                fputs($output_file, '<subject>' . htmlspecialchars($keyword, ENT_XML1) . '</subject>' . PHP_EOL);
             }
             fputs($output_file, '</subjects>' . PHP_EOL);
         }
 
         // Galleys
-        fputs($output_file, '<article_galley xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" url_path="" approved="false" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">
+        fputs($output_file, '<article_galley xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" url_path="" approved="true" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">
       <id type="internal" advice="ignore">' . $id . '</id>
       <name locale="en">' . 'PDF' . '</name>
       <seq>0</seq>
-      <submission_file_ref id="' . $id . '"/>
+      <submission_file_ref id="' . ($id+1) . '"/>
     </article_galley>');
 
         // TODO: Page Numbers
