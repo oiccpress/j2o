@@ -5,7 +5,7 @@ class J2oArticle extends J2oObject {
     public string $doi, $title, $articleType, $volume, $issue, $pdf, $journalId;
     public bool $openAccess = false;
     public array $keywords = [], $authors = [], $subjects = [], $references = [];
-    public J2oText $abstract, $acknowledgement;
+    public J2oText $abstract, $acknowledgement, $body;
     public DateTime $published, $acceptedDate, $receivedDate;
 
     public function __construct( public $filepath, $node ){
@@ -103,7 +103,7 @@ class J2oArticle extends J2oObject {
                     $this->loadFrontNode($node);
                     break;
                 case 'body':
-                    printdebug('>> Ignoring body');
+                    $this->body = $this->subobject( new J2oText($node) );
                     break;
                 case 'back':
                     $this->loadBackNode($node);
