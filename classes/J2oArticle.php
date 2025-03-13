@@ -2,10 +2,10 @@
 
 class J2oArticle extends J2oObject {
 
-    public string $doi, $title, $articleType, $volume, $issue, $pdf, $journalId;
+    public string $doi, $title, $articleType, $volume, $issue, $pdf, $journalId, $order;
     public bool $openAccess = false;
     public array $keywords = [], $authors = [], $subjects = [], $references = [];
-    public J2oText $abstract, $acknowledgement, $body;
+    public ?J2oText $abstract = null, $acknowledgement = null, $body = null;
     public DateTime $published, $acceptedDate, $receivedDate;
 
     public function __construct( public $filepath, $node ){
@@ -19,6 +19,14 @@ class J2oArticle extends J2oObject {
 
     public function getIssueKey() {
         return 'journal-' . $this->journalId . '-vol-' . $this->volume . '-issue-' . $this->issue;
+    }
+
+    public function getHTML() {
+        $out = [];
+        if($this->abstract) $out[] = $this->abstract->html;
+        if($this->body) $out[] = $this->body->html;
+        if($this->acknowledgement) $out[] = $this->acknowledgement->html;
+        return implode('<hr/>', $out);
     }
 
     public function outputArticle($output_file, $id) {
@@ -43,6 +51,41 @@ class J2oArticle extends J2oObject {
 
             fputs($output_file, '</file></submission_file>' . PHP_EOL);
         }
+        $html = $this->getHTML();
+        if($this->openAccess && !empty($html)) {
+            $html_id = $id * 1000;
+            $stage = 'submission';
+            $dataset = 'Article Text';
+            fputs($output_file, '<submission_file xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="' . $html_id . '" file_id="' . $html_id . '" stage="' . $stage . '" viewable="false" genre="' . $dataset . '" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">' . PHP_EOL);
+
+            fputs($output_file, '<name filepath="' . $id . '.html" locale="en">article.html</name>' . PHP_EOL);
+            $ext = 'html';
+            fputs($output_file, '<file id="' . $file_id . '" filesize="' . strlen($html) . '" extension="' . $ext . '">');
+            fputs($output_file, '<embed encoding="base64">' . base64_encode($html) . '</embed>' . PHP_EOL);
+
+            fputs($output_file, '</file></submission_file>' . PHP_EOL);
+
+            if($this->body) {
+                $i = 1;
+                foreach($this->body->files as $file => $filename) {
+                    $stage = 'dependent';
+                    $dataset = 'Image';
+                    $file_id = ($id * 1000) + $i;
+                    $i += 1;
+                    $file = $this->relativePath($this->filepath, $file);
+                    fputs($output_file, '<submission_file xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="' . $file_id . '" file_id="' . $file_id . '" stage="' . $stage . '" viewable="false" genre="' . $dataset . '" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">' . PHP_EOL);
+
+                    fputs($output_file, '<name filepath="' . $id . '.pdf" locale="en">' . $filename . '</name>' . PHP_EOL);
+                    $ext = explode(".", $file);
+                    $ext = array_pop($ext);
+                    fputs($output_file, '<file id="' . $file_id . '" filesize="' . filesize($file) . '" extension="' . $ext . '">');
+                    fputs($output_file, '<embed encoding="base64">' . base64_encode(file_get_contents($file)) . '</embed>' . PHP_EOL);
+
+                    fputs($output_file, '</file></submission_file>' . PHP_EOL);
+                }
+            }
+
+        }
 
         $primary_contact = '';
         foreach($this->authors as $k => $author) {
@@ -51,7 +94,7 @@ class J2oArticle extends J2oObject {
             }
         }
 
-        fputs($output_file, '<publication xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1" status="3" url_path="" seq="0" access_status="0" ' . $primary_contact . ' date_published="' . $this->published->format('Y-m-d') . '" section_ref="'. J2oIssue::slugify($this->articleType) . '" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">' . PHP_EOL);
+        fputs($output_file, '<publication xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1" status="3" url_path="" seq="' . $this->order . '" access_status="0" ' . $primary_contact . ' date_published="' . $this->published->format('Y-m-d') . '" section_ref="'. J2oIssue::slugify($this->articleType) . '" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">' . PHP_EOL);
 
         fputs($output_file, '<title locale="en">' . htmlspecialchars($this->title, ENT_XML1) . '</title>' . PHP_EOL);
         fputs($output_file, '<abstract locale="en">' . $this->abstract->html . '</abstract>' . PHP_EOL);
@@ -79,15 +122,35 @@ class J2oArticle extends J2oObject {
         }
 
         // Galleys
-        fputs($output_file, '<article_galley xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" url_path="" approved="true" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">
-      <id type="internal" advice="ignore">' . $id . '</id>
-      <name locale="en">' . 'PDF' . '</name>
-      <seq>0</seq>
-      <submission_file_ref id="' . ($id+1) . '"/>
-    </article_galley>');
+        if($this->pdf && $this->openAccess) {
+            fputs($output_file, '<article_galley xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" url_path="" approved="true" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">
+        <id type="internal" advice="ignore">' . $id . '</id>
+        <name locale="en">' . 'PDF' . '</name>
+        <seq>0</seq>
+        <submission_file_ref id="' . ($id+1) . '"/>
+        </article_galley>');
+        }
+        if(!empty($html) && $this->openAccess) {
+            fputs($output_file, '<article_galley xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" url_path="" approved="true" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">
+        <id type="internal" advice="ignore">' . $id . '</id>
+        <name locale="en">' . 'HTML' . '</name>
+        <seq>1</seq>
+        <submission_file_ref id="' . ($id*1000) . '"/>
+        </article_galley>');
+            foreach($this->body->files as $file => $filename) {
+                $ext = explode(".", $file);
+                $ext = array_pop($ext);
+                $file = $this->relativePath($this->filepath, $file);
+                fputs($output_file, '<covers><cover locale="en">');
+                fputs($output_file, '<cover_image>' . $id . '.' . $ext . '</cover_image>');
+                fputs($output_file, '<cover_image_alt_text>Cover Image</cover_image_alt_text>');
+                fputs($output_file, '<embed encoding="base64">' . base64_encode(file_get_contents($file)) . '</embed>');
+                fputs($output_file, '</cover></covers>');
+                break; // Only use the first one!
+            }
+        }
 
         // TODO: Page Numbers
-        // TODO: Cover Image
 
         fputs($output_file, '</publication>' . PHP_EOL);
 
@@ -280,6 +343,9 @@ class J2oArticle extends J2oObject {
                 case 'article-id':
                     $id_type = $node->getAttribute('pub-id-type');
                     switch($id_type) {
+                        case 'manuscript':
+                            $this->order = $node->nodeValue;
+                            break;
                         case 'doi':
                             $this->doi = $node->nodeValue;
                             break;

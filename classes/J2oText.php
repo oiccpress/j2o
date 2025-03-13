@@ -61,7 +61,7 @@ class J2oText extends J2oObject {
                         $file = $node->getAttribute('xlink:href');
                         $fileparts = explode("/", $file);
                         $filename = array_pop( $fileparts );
-                        $files[$file] = $filename; // Ask to include
+                        $this->files[$file] = $filename; // Ask to include
                         $html[] = '<img src="' . $filename . '" />';
                         break;
                     case 'chem-struct-wrap':
