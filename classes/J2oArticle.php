@@ -4,7 +4,20 @@ class J2oArticle extends J2oObject {
 
     public string $doi, $title, $articleType, $volume, $issue, $pdf, $journalId, $order;
     public bool $openAccess = false;
-    public array $keywords = [], $authors = [], $subjects = [], $references = [];
+
+    /**
+     * @param J2oAuthor[]
+     */
+    public array $authors = [];
+
+    /**
+     * @param J2oReference[]
+     */
+    public array $references = [];
+
+    public array $notes = [];
+    
+    public array $keywords = [], $subjects = [];
     public ?J2oText $abstract = null, $acknowledgement = null, $body = null;
     public DateTime $published, $acceptedDate, $receivedDate;
 
@@ -26,7 +39,27 @@ class J2oArticle extends J2oObject {
         if($this->abstract) $out[] = $this->abstract->html;
         if($this->body) $out[] = $this->body->html;
         if($this->acknowledgement) $out[] = $this->acknowledgement->html;
-        return implode('<hr/>', $out);
+        foreach($this->notes as $note) {
+            $out[] = $note->html;
+        }
+        $html = implode('<hr/>', $out);
+        if(!empty($html)) {
+            // Add title in
+            $outhtml = ['<h1>' . $this->title . '</h1>' ];
+
+            if(!empty($this->authors)) {
+                $outhtml[] = J2oAuthor::toHTML($this->authors);
+            }
+
+            $outhtml[] = $html;
+
+            if(!empty($this->references)) {
+                $outhtml[] = '<hr/><h2>References</h2>';
+                $outhtml[] = J2oReference::toHTML($this->references);
+            }
+
+            return implode(PHP_EOL, $outhtml);
+        }
     }
 
     public function outputArticle($output_file, $id) {
@@ -150,6 +183,14 @@ class J2oArticle extends J2oObject {
             }
         }
 
+        if(!empty($this->references)) {
+            fputs($output_file, '<citations>');
+            foreach($this->references as $reference) {
+                fputs($output_file, '<citation>' . htmlentities($reference->toAPA(false), ENT_XML1) . '</citation>');
+            }
+            fputs($output_file, '</citations>');
+        }
+
         // TODO: Page Numbers
 
         fputs($output_file, '</publication>' . PHP_EOL);
@@ -190,8 +231,10 @@ class J2oArticle extends J2oObject {
                     break;
                 case 'glossary':
                 case 'app-group':
-                case 'notes':
                     printdebug('>> skipping ' . $node->nodeName);
+                    break;
+                case 'notes':
+                    $this->notes[] = $this->subobject(new J2oText($node));
                     break;
                 default:
                     $this->logWarning('>> Unknown back element: ' . $node->nodeName);
@@ -388,7 +431,7 @@ class J2oArticle extends J2oObject {
                             'target-type', 'article-toc-levels', 'bodypdf-grant', 'bodyhtml-grant',
                             'bibliography-grant', 'online-first', 'esm-grant',
                         ])) {
-                        continue; // Ignore
+                        continue 2; // Ignore
                     }
                     switch($name) {
                         case 'open-access':

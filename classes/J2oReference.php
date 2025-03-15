@@ -2,8 +2,8 @@
 
 class J2oReference extends J2oObject {
 
-    public string $year, $volume, $issue, $fpage, $lpage, $doi, $edition,
-        $source, $title, $publisherName, $publisherLocation, $collab;
+    public ?string $year = null, $volume = null, $issue = null, $fpage = null, $lpage = null, $doi = null, $edition,
+        $source, $title = null, $publisherName = null, $publisherLocation = null, $collab;
     public array $authors = [];
     public J2oText $content;
 
@@ -112,6 +112,74 @@ class J2oReference extends J2oObject {
                     $this->logWarning('>> Unknown reference mixed-citation element: ' . $node->nodeName);
             }
         }
+    }
+
+    /**
+     * Convert this line to an APA-style output as requested by OICC
+     * 
+     * This is following https://www.mmu.ac.uk/sites/default/files/2024-03/APA%20Referencing%20Quick%20Guide%20v2.pdf
+     * (the author of this package is not an academic so there may be inacuracies with this output)
+     * 
+     * If you need something else, you may need another function (sorry!)
+     */
+    public function toAPA($html = true) {
+
+        $out = [];
+        // $authors is an array of array of strings
+        // each item is key 0: giveNane; key 1: surname; key 2: suffix
+        if(count($this->authors) === 1) {
+            $out[] =  $this->authors[0][1] . ' (' . $this->year . ')';
+        } elseif(count($this->authors) === 2) {
+            $out[] = $this->authors[0][1] . ' and ' . $this->authors[1][1] . ' (' . $this->year . ')';
+        } elseif(count($this->authors) > 2) {
+            $out[] = $this->authors[0][1] . ' et al. (' . $this->year . ')';
+        } else {
+            $out[] = 'Unknown (' . $this->year . ')';
+        }
+
+        // Article Title
+        if($html) {
+            $out[] = '<em>' . $this->title . '</em>';
+        } else {
+            $out[] = $this->title;
+        }
+
+        if($this->volume && $this->issue) {
+            $out[] = $this->volume . '(' . $this->issue . ')';
+        }
+        if($this->fpage && $this->lpage) {
+            $out[] = '(pp. ' . $this->fpage . '-' . $this->lpage . ')';
+        }
+
+        if($this->publisherName) {
+            $out[] = $this->publisherName;
+        }
+
+        if($this->doi) {
+            if($html) {
+                $out[] = '<a href="https://doi.org/' . $this->doi . '" target="_blank">' . $this->doi . '</a>';
+            } else{
+                $out[] = 'https://doi.org/' . $this->doi;
+            }
+        }
+
+        return implode(' ', $out);
+
+    }
+
+    /**
+     * This function converts an array of references into a HTML rendered block
+     * 
+     * @param J2oReference[] $references
+     */
+    public static function toHTML($references) {
+
+        $out = [];
+        foreach($references as $reference) {
+            $out[] = $reference->toAPA();
+        }
+        return '<ol><li>' . implode("</li><li>", $out) . '</li></ol>';
+
     }
 
 

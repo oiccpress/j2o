@@ -32,6 +32,13 @@ class J2oIssue {
         $this->outputIssueFooter($output_file);
     }
 
+    public function outputArticleHtml($out_dir) {
+        foreach($this->articles as $k => $article) {
+            file_put_contents(
+                $out_dir . '/' . $this->getIssueKey() . '-' . $k . '-galley.html', $article->getHTML() );
+        }
+    }
+
     public static function slugify($text, string $divider = '-') {
         // Thanks https://stackoverflow.com/a/2955878/230419
         // replace non letter or digits by divider

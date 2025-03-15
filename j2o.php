@@ -23,9 +23,18 @@ require_once(dirname(__FILE__) . '/classes/J2oIssue.php');
 require_once(dirname(__FILE__) . '/classes/J2oReference.php');
 
 $arguments = $argv;
-if(count($arguments) === 3) {
+if($arguments[0] === 'j2o.php') { // Remove self
     array_shift($arguments);
 }
+
+$mode = 'xml';
+if($arguments[0] === 'html') {
+    // Html mode
+    $mode = 'html';
+    println('HTML mode activated');
+    array_shift($arguments);
+}
+
 if(count($arguments) === 2) {
 
     $in_dir = $arguments[0];
@@ -87,7 +96,11 @@ if(count($arguments) === 2) {
     }
 
     foreach($issueOutputs as $output) {
-        $output->outputIssue($out_dir);
+        if($mode === 'xml') {
+            $output->outputIssue($out_dir);
+        } elseif($mode === 'html') {
+            $output->outputArticleHtml($out_dir);
+        }
     }
 
     $html = ['<h1>J2o report</h1>'];

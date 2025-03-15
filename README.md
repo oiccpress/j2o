@@ -10,8 +10,22 @@ for the better or worse.
 ## How to run
 
 ```
-php j2o.php input_directory output_directory
+php j2o.php [input_directory] [output_directory]
 ```
+
+You can also run a HTML output of created full-text html galletys:
+
+```
+php j2o.php html [input_directory] [output_directory]
+```
+
+This will output only the HTML full-text so they can be easily checked for problems converting
+from JATS to HTML (it's not a 1:1 direct conversion), along with checking references are output.
+
+## Quirks
+
+* This has only been tested using our "simple XML" importer as OJS's native importer is too strict - https://github.com/oiccpress/simplexml
+* References are forced into APA style as OJS can only work with a string of reference data
 
 ## Other Projects
 
