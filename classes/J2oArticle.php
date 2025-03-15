@@ -5,6 +5,8 @@ class J2oArticle extends J2oObject {
     public string $doi, $title, $articleType, $volume, $issue, $pdf, $journalId, $order;
     public bool $openAccess = false;
 
+    public ?string $fpage = null, $lpage = null;
+
     /**
      * @param J2oAuthor[]
      */
@@ -19,7 +21,7 @@ class J2oArticle extends J2oObject {
     
     public array $keywords = [], $subjects = [];
     public ?J2oText $abstract = null, $acknowledgement = null, $body = null;
-    public DateTime $published, $acceptedDate, $receivedDate;
+    public ?DateTime $published = null, $acceptedDate = null, $receivedDate = null;
 
     public function __construct( public $filepath, $node ){
         $this->loadFrom($node);
@@ -64,7 +66,9 @@ class J2oArticle extends J2oObject {
 
     public function outputArticle($output_file, $id) {
         fputs($output_file, '<article xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" ');
-        fputs($output_file, 'data_accepted="' . $this->acceptedDate->format('Y-m-d') . '" ');
+        if($this->acceptedDate) {
+            fputs($output_file, 'data_accepted="' . $this->acceptedDate->format('Y-m-d') . '" ');
+        }
         fputs($output_file, 'current_publication_id="' . $id . '"  status="3" submission_progress="" stage="production">' . PHP_EOL);
 
         fputs($output_file, '<id type="doi" advice="update">' . $this->doi . '</id>' . PHP_EOL);
@@ -130,7 +134,9 @@ class J2oArticle extends J2oObject {
         fputs($output_file, '<publication xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1" status="3" url_path="" seq="' . $this->order . '" access_status="0" ' . $primary_contact . ' date_published="' . $this->published->format('Y-m-d') . '" section_ref="'. J2oIssue::slugify($this->articleType) . '" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">' . PHP_EOL);
 
         fputs($output_file, '<title locale="en">' . htmlspecialchars($this->title, ENT_XML1) . '</title>' . PHP_EOL);
-        fputs($output_file, '<abstract locale="en">' . $this->abstract->html . '</abstract>' . PHP_EOL);
+        if($this->abstract) {
+            fputs($output_file, '<abstract locale="en">' . $this->abstract->html . '</abstract>' . PHP_EOL);
+        }
 
         if(!empty($this->keywords)) {
             fputs($output_file, '<keywords locale="en">' . PHP_EOL);
@@ -163,8 +169,12 @@ class J2oArticle extends J2oObject {
         <submission_file_ref id="' . ($id+1) . '"/>
         </article_galley>' . PHP_EOL);
         }
-        if(!empty($html) && $this->openAccess) {
-            fputs($output_file, '<article_galley xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" url_path="" approved="true" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">
+        if($this->body && !empty($html) && $this->openAccess) {
+            fputs($output_file, '<article_galley xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" url_path="" approved="true"');
+            if($this->fpage && $this->lpage) {
+                fputs($output_file, ' pages="' . $this->fpage . '-' . $this->lpage . '" ');
+            }
+            fputs($output_file, 'xsi:schemaLocation="http://pkp.sfu.ca native.xsd">
         <id type="internal" advice="ignore">' . $id . '</id>
         <name locale="en">' . 'HTML' . '</name>
         <seq>1</seq>
@@ -406,6 +416,12 @@ class J2oArticle extends J2oObject {
                 case 'kwd-group':
                     $this->loadKwdGroup($node);
                     break;
+                case 'fpage':
+                    $this->fpage = $node->nodeValue;
+                    break;
+                case 'lpage':
+                    $this->lpage = $node->nodeValue;
+                    break;
                 default:
                     $this->logWarning('>> Unknown article-meta element: ' . $node->nodeName);
             }
@@ -430,6 +446,9 @@ class J2oArticle extends J2oObject {
                             'article-type', 'journal-subject-collection', 'issue-type', 'pdf-type',
                             'target-type', 'article-toc-levels', 'bodypdf-grant', 'bodyhtml-grant',
                             'bibliography-grant', 'online-first', 'esm-grant',
+                            'issue-pricelist-year', 'issue-online-date-year', 'issue-online-date-month',
+                            'issue-online-date-day', 'issue-print-date-year', 'issue-print-date-month',
+                            'issue-print-date-day',
                         ])) {
                         continue 2; // Ignore
                     }

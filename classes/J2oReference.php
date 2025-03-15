@@ -73,6 +73,7 @@ class J2oReference extends J2oObject {
         foreach($parent->childNodes as $node) {
             switch($node->nodeName) {
                 case 'comment':
+                case 'elocation-id':
                 case '#text':
                     break;
                 case 'pub-id':

@@ -2,7 +2,7 @@
 
 class J2oAuthor extends J2oObject {
 
-    public ?string $surname, $givenNames = null, $email = null;
+    public ?string $surname = 'Unknown', $givenNames = null, $email = null;
     public bool $corresponding = false;
 
     public array $aff_id = [], $affiliations = [];
