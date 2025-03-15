@@ -125,6 +125,10 @@ class J2oReference extends J2oObject {
      */
     public function toAPA($html = true) {
 
+        if(empty($authors) && !empty($this->content->html)) {
+            return $this->content->html; // Some ocassional items were marked as unknown
+        }
+
         $out = [];
         // $authors is an array of array of strings
         // each item is key 0: giveNane; key 1: surname; key 2: suffix
