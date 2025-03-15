@@ -161,7 +161,7 @@ class J2oArticle extends J2oObject {
         <name locale="en">' . 'PDF' . '</name>
         <seq>0</seq>
         <submission_file_ref id="' . ($id+1) . '"/>
-        </article_galley>');
+        </article_galley>' . PHP_EOL);
         }
         if(!empty($html) && $this->openAccess) {
             fputs($output_file, '<article_galley xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" url_path="" approved="true" xsi:schemaLocation="http://pkp.sfu.ca native.xsd">
@@ -178,17 +178,17 @@ class J2oArticle extends J2oObject {
                 fputs($output_file, '<cover_image>' . $id . '.' . $ext . '</cover_image>');
                 fputs($output_file, '<cover_image_alt_text>Cover Image</cover_image_alt_text>');
                 fputs($output_file, '<embed encoding="base64">' . base64_encode(file_get_contents($file)) . '</embed>');
-                fputs($output_file, '</cover></covers>');
+                fputs($output_file, '</cover></covers>' . PHP_EOL);
                 break; // Only use the first one!
             }
         }
 
         if(!empty($this->references)) {
-            fputs($output_file, '<citations>');
+            fputs($output_file, '<citations>' . PHP_EOL);
             foreach($this->references as $reference) {
-                fputs($output_file, '<citation>' . htmlentities($reference->toAPA(false), ENT_XML1) . '</citation>');
+                fputs($output_file, '<citation>' . htmlentities($reference->toAPA(false), ENT_XML1) . '</citation>' . PHP_EOL);
             }
-            fputs($output_file, '</citations>');
+            fputs($output_file, '</citations>' . PHP_EOL);
         }
 
         // TODO: Page Numbers
