@@ -172,9 +172,9 @@ class J2oArticle extends J2oObject {
         if($this->body && !empty($html) && $this->openAccess) {
             fputs($output_file, '<article_galley xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" locale="en" url_path="" approved="true"');
             if($this->fpage && $this->lpage) {
-                fputs($output_file, ' pages="' . $this->fpage . '-' . $this->lpage . '" ');
+                fputs($output_file, ' pages="' . $this->fpage . '-' . $this->lpage . '"');
             }
-            fputs($output_file, 'xsi:schemaLocation="http://pkp.sfu.ca native.xsd">
+            fputs($output_file, '>
         <id type="internal" advice="ignore">' . $id . '</id>
         <name locale="en">' . 'HTML' . '</name>
         <seq>1</seq>
