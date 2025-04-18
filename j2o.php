@@ -7,8 +7,10 @@ if(!function_exists('println')) {
 }
 if(!function_exists('printdebug')) {
     function printdebug($msg) {
-        // TODO: Verbosity option
-        echo "\e[1;33m" . $msg . "\e[0m" . PHP_EOL;
+        global $quiet_debug;
+        if(!$quiet_debug) {
+            echo "\e[1;33m" . $msg . "\e[0m" . PHP_EOL;
+        }
     }
 }
 
@@ -23,8 +25,14 @@ require_once(dirname(__FILE__) . '/classes/J2oIssue.php');
 require_once(dirname(__FILE__) . '/classes/J2oReference.php');
 
 $arguments = $argv;
-if($arguments[0] === 'j2o.php') { // Remove self
+if(stripos($arguments[0], 'j2o.php') !== false) { // Remove self
     array_shift($arguments);
+}
+
+$quiet_debug = false;
+if(in_array( '--quiet', $arguments ) ) {
+    $quiet_debug = true;
+    array_splice( $arguments, array_search('--quiet', $arguments), 1 );
 }
 
 $mode = 'xml';
@@ -33,7 +41,13 @@ if($arguments[0] === 'html') {
     $mode = 'html';
     println('HTML mode activated');
     array_shift($arguments);
+} elseif($arguments[0] === 'report') {
+    // Report Only Mode
+    $mode = 'report';
+    println('Report-only mode activated');
+    array_shift($arguments);
 }
+
 
 if(count($arguments) === 2) {
 
@@ -104,16 +118,25 @@ if(count($arguments) === 2) {
     }
 
     $html = ['<h1>J2o report</h1>'];
+    $html[] = 'Total Articles: ' . count($articleEntries) . '<br/>';
     $html[] = 'Max warnings: ' . max($articleWarnings) . '<br/>';
     $html[] = 'Avg warnings: ' . ( array_sum($articleWarnings) / count($articleWarnings) );
     $html[] = '<table>';
+    $html[] = '<thead>';
+    $html[] = '<tr><th>Title / Summary</th><th>Warning Count</th><th>DOI</th><th>Galleys</th></tr>';
+    $html[] = '</thead><tbody>';
     foreach($articleEntries as $article) {
         $html[] = '<tr><td>';
-        $html[] = '<details><summary>' . $article->title . '<br/>' . $article->filepath . '</summary>';
+        $html[] = '<details><summary>' . $article->title . ' - ';
+        $html[] = $article->volume . ' - ' . $article->issue . ' - ' . ($article->openAccess ? 'OpenAccess' : 'ClosedAccess');
+        $html[] = '<br/>' . $article->filepath . '</summary>';
         $html[] = '<ul><li>' . implode('</li><li>', $article->warnings) . '</li></ul></details>';
-        $html[] = '</td><td>' . count($article->warnings) . ' warnings</td></tr>';
+        $html[] = '</td><td>' . count($article->warnings) . ' warnings</td>';
+        $html[] = '<td>' . $article->doi . '</td>';
+        $html[] = '<td>' . ($article->pdf ? 'PDF' : '') . '</td>';
+        $html[] = '</tr>';
     }
-    $html[] = '</table>';
+    $html[] = '</tbody></table>';
     file_put_contents('report.html', implode("", $html));
 
     println('-----');
